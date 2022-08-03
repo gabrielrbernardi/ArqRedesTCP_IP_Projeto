@@ -1,0 +1,149 @@
+Building configuration...
+
+Current configuration : 2212 bytes
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+!
+hostname R3
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+no ip icmp rate-limit unreachable
+ip cef
+!
+!
+!
+!
+!
+!
+no ip domain lookup
+ipv6 unicast-routing
+ipv6 cef
+!
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip tcp synwait-time 5
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ ip address 172.0.0.1 255.255.255.0
+!
+interface Tunnel0
+ ip address 192.168.9.1 255.255.255.0
+ tunnel source 2022:ABC:DB1::1
+ tunnel mode gre ipv6
+ tunnel destination 2022:ABC:DB1::2
+ tunnel path-mtu-discovery
+!
+interface FastEthernet0/0
+ ip address 192.168.2.2 255.255.255.0
+ duplex full
+!
+interface FastEthernet1/0
+ ip address 192.168.3.2 255.255.255.0
+ speed auto
+ duplex auto
+!
+interface FastEthernet1/1
+ no ip address
+ speed auto
+ duplex auto
+ ipv6 address 2022:ABC:DB1::1/64
+ ipv6 enable
+!
+interface GigabitEthernet2/0
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet3/0
+ no ip address
+ shutdown
+ negotiation auto
+!
+router ospf 1
+ redistribute connected subnets
+ redistribute static subnets
+ redistribute bgp 411 metric 1
+ network 172.0.0.0 0.0.0.255 area 0
+ network 192.168.2.0 0.0.0.255 area 0
+ network 192.168.3.0 0.0.0.255 area 0
+ network 192.168.30.0 0.0.0.255 area 0
+!
+router bgp 411
+ bgp router-id 2.2.2.2
+ bgp log-neighbor-changes
+ no bgp default ipv4-unicast
+ neighbor 2022:ABC:DB1::2 remote-as 412
+ !
+ address-family ipv4
+  bgp redistribute-internal
+  redistribute ospf 1
+ exit-address-family
+ !
+ address-family ipv6
+  redistribute ospf 1
+  redistribute ospf 2
+  bgp redistribute-internal
+  network 2022:ABC:DB1::/64
+  neighbor 2022:ABC:DB1::2 activate
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 192.168.4.0 255.255.255.0 Tunnel0 192.168.9.2
+ip route 192.168.5.0 255.255.255.0 Tunnel0 192.168.9.2
+ip route 192.168.6.0 255.255.255.0 Tunnel0 192.168.9.2
+!
+ipv6 router ospf 1
+ redistribute bgp 411 metric 1
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line aux 0
+ exec-timeout 0 0
+ privilege level 15
+ logging synchronous
+ stopbits 1
+line vty 0 4
+ login
+!
+!
+end
